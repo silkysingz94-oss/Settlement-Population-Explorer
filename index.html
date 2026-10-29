@@ -1,0 +1,1448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06172c">
+<title>SILKYSINGZ GEOAI | SETTLEMENT POPULATION EXPLORER</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --bg:#041426;
+  --panel:#082541;
+  --panel2:#0b2c4c;
+  --border:#19466a;
+  --cyan:#12c5f4;
+  --green:#12d6a0;
+  --text:#f0f7ff;
+  --muted:#9db6d0;
+  --danger:#ff7884;
+}
+* { box-sizing:border-box; }
+html,body {
+  height:100%;
+  width:100%;
+  margin:0;
+  overflow:hidden;
+}
+body {
+  color:var(--text);
+  background:var(--bg);
+  font:13px "Segoe UI",Arial,sans-serif;
+}
+button,input,select {
+  font:inherit;
+  color:var(--text);
+  background:#061b32;
+  border:1px solid #285273;
+  border-radius:6px;
+  padding:9px;
+}
+button { cursor:pointer; }
+button:hover { border-color:var(--cyan); }
+button.primary {
+  background:#087fc5;
+  border-color:#087fc5;
+}
+button:disabled { opacity:.45; cursor:not-allowed; }
+header {
+  height:76px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:10px 18px;
+  background:linear-gradient(110deg,#031426,#0a3458);
+  border-bottom:1px solid #1b638d;
+  overflow:hidden;
+}
+.brand { display:flex; align-items:center; gap:12px; min-width:0; }
+.brand-logo {
+  width:46px; height:46px; flex:0 0 46px;
+  display:grid; place-items:center;
+  border:1px solid var(--cyan);
+  border-radius:10px;
+  color:var(--cyan);
+  font-weight:900;
+  font-size:15px;
+}
+h1 { font-size:20px; margin:0; }
+h1 span { color:var(--cyan); }
+header p { color:var(--muted); font-size:11px; margin:5px 0 0; }
+.header-status { color:var(--muted); font-size:11px; text-align:right; }
+
+.toolbar {
+  height:48px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 12px;
+  border-bottom:1px solid var(--border);
+  background:#051c33;
+  overflow:hidden;
+}
+.toolbar-status {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+  color:var(--muted);
+}
+.pill {
+  display:inline-block;
+  padding:4px 8px;
+  border:1px solid #275476;
+  border-radius:20px;
+  color:#c3dcef;
+  font-size:10px;
+  white-space:nowrap;
+}
+.flex-spacer { flex:1; }
+
+/* Main layout never scrolls as a whole. */
+.dashboard {
+  height:calc(100vh - 124px);
+  display:grid;
+  grid-template-columns:minmax(220px,255px) minmax(340px,1.35fr) minmax(290px,1fr);
+  gap:10px;
+  padding:10px;
+  overflow:hidden;
+  min-height:0;
+}
+.column {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+  min-height:0;
+}
+
+/* The two sidebars are the only vertically scrolling columns. */
+.left,.right {
+  height:100%;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#285879 #041426;
+  padding-right:3px;
+}
+
+/* The map column is fixed and cannot scroll vertically. */
+.center {
+  height:100%;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+}
+.panel {
+  flex-shrink:0;
+  min-width:0;
+  overflow:hidden;
+  background:linear-gradient(155deg,var(--panel),#061d35);
+  border:1px solid var(--border);
+  border-radius:9px;
+}
+.panel-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  font-weight:700;
+  font-size:13px;
+}
+.panel-heading small {
+  color:var(--muted);
+  font-size:10px;
+  font-weight:400;
+}
+.panel-body { padding:12px; }
+.section {
+  padding-bottom:13px;
+  margin-bottom:13px;
+  border-bottom:1px solid #163d5c;
+}
+.section:last-child { border-bottom:0; margin-bottom:0; }
+.section-title {
+  margin-bottom:10px;
+  color:var(--cyan);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.7px;
+  text-transform:uppercase;
+}
+.field { margin-bottom:10px; }
+.field label {
+  display:block;
+  margin-bottom:5px;
+  color:#c7daed;
+  font-size:11px;
+}
+.field input,.field select { width:100%; min-width:0; }
+.btn-row { display:flex; gap:7px; }
+.btn-row button { flex:1; }
+.help {
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.6;
+}
+.notice {
+  border:1px solid #245477;
+  border-radius:7px;
+  background:#061d35;
+  padding:9px;
+  color:#b8cee2;
+  font-size:10px;
+  line-height:1.5;
+}
+.status-dot {
+  display:inline-block;
+  width:7px;height:7px;border-radius:50%;
+  margin-right:5px;background:var(--green);
+}
+.status-error { color:#ff9ca5; }
+.status-loading { color:#ffe09b; }
+
+.center > .map-panel {
+  height:calc(100% - 238px);
+  min-height:180px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+#map {
+  flex:1 1 auto;
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  background:#d9e6e9;
+}
+.legend {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:8px 10px;
+  background:#04192f;
+  border-top:1px solid var(--border);
+  color:#c3d9eb;
+  font-size:10px;
+  flex-shrink:0;
+}
+.legend-dot {
+  display:inline-block;
+  width:9px;height:9px;
+  border-radius:50%;
+  margin-right:4px;
+}
+.center > .table-panel {
+  height:228px;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+.table-scroll {
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+table { width:100%; border-collapse:collapse; font-size:10px; }
+th,td {
+  padding:8px 7px;
+  border-bottom:1px solid #173c59;
+  text-align:left;
+  white-space:nowrap;
+}
+th {
+  position:sticky; top:0; z-index:2;
+  background:#0a2d4d;
+  color:#c3d8ec;
+}
+td.numeric { text-align:right; font-variant-numeric:tabular-nums; }
+tbody tr:hover { background:#0b3557; }
+.kpi-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.kpi {
+  padding:10px;
+  min-width:0;
+  border:1px solid #1a4c70;
+  border-radius:7px;
+  background:linear-gradient(135deg,#0b3457,#06213c);
+}
+.kpi-label { font-size:10px; color:#b7cde1; }
+.kpi-value {
+  margin:8px 0 4px;
+  font-size:22px;
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.kpi-note { font-size:9px; color:var(--muted); }
+.chart-wrap { height:230px; position:relative; }
+.chart-wrap.tall { height:265px; }
+.chart-note { margin-top:8px; }
+.leaflet-popup-content-wrapper,.leaflet-popup-tip {
+  background:#082947;
+  color:#f5faff;
+}
+.leaflet-popup-content { line-height:1.65; }
+.leaflet-tooltip.settlement-label {
+  background:#041426;
+  color:white;
+  border:1px solid #267aa5;
+  box-shadow:none;
+}
+input[type="checkbox"] { width:auto; accent-color:var(--cyan); }
+@media(max-width:1100px) {
+  .dashboard {
+    grid-template-columns:minmax(190px,225px) minmax(300px,1.2fr) minmax(250px,.9fr);
+    gap:7px;padding:7px;
+  }
+  .panel-heading,.panel-body { padding:9px; }
+  .kpi-value { font-size:18px; }
+}
+@media(max-width:800px) {
+  .header-status { display:none; }
+  h1 { font-size:16px; }
+  header { padding:8px 10px; }
+  .dashboard {
+    grid-template-columns:minmax(150px,.8fr) minmax(240px,1.2fr) minmax(205px,1fr);
+    gap:5px;padding:5px;
+  }
+  .toolbar { padding:5px; gap:5px; }
+  .toolbar button { padding:7px; font-size:10px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-logo">GBoS</div>
+    <div>
+      <h1>GBoS <span>GEOAI</span></h1>
+      <p>Settlement Population Explorer · The Gambia</p>
+    </div>
+  </div>
+  <div class="header-status">
+    GIS / Cartography Unit<br>
+    Research and educational use
+  </div>
+</header>
+
+<div class="toolbar">
+  <span class="pill" id="loadBadge">Automatic loading</span>
+  <span class="toolbar-status" id="fileStatus">Waiting for settlement directory…</span>
+  <div class="flex-spacer"></div>
+  <button id="reloadBtn">↻ Reload CSV</button>
+  <button id="exportBtn" class="primary">↓ Export CSV</button>
+</div>
+
+<main class="dashboard">
+  <!-- LEFT: scrollable controls -->
+  <aside class="column left">
+    <section class="panel">
+      <div class="panel-heading">Explorer controls <small>FILTERS</small></div>
+      <div class="panel-body">
+
+        <div class="section">
+          <div class="section-title">01 · Source data</div>
+          <div class="notice" id="sourceInfo">
+            The settlement CSV will be fetched automatically from its configured URL.
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label for="manualFile">Optional local CSV fallback</label>
+            <input id="manualFile" type="file" accept=".csv,text/csv">
+          </div>
+          <p class="help">
+            The automatic source must be publicly accessible. If you use GitHub,
+            select the Raw file URL, not the repository's normal file-view page.
+          </p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">02 · Administrative selection</div>
+          <div class="field">
+            <label for="lga">LGA / Region</label>
+            <select id="lga"><option value="">All LGAs</option></select>
+          </div>
+          <div class="field">
+            <label for="district">District</label>
+            <select id="district"><option value="">All districts</option></select>
+          </div>
+          <div class="field">
+            <label for="ward">Ward</label>
+            <select id="ward"><option value="">All wards</option></select>
+          </div>
+          <div class="field">
+            <label for="settlement">Settlement</label>
+            <select id="settlement"><option value="">All settlements</option></select>
+          </div>
+          <div class="field">
+            <label for="search">Search names or codes</label>
+            <input id="search" type="search" placeholder="Enter a name or code">
+          </div>
+          <div class="btn-row">
+            <button id="applyBtn" class="primary">Apply</button>
+            <button id="resetBtn">Reset</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">03 · Map display</div>
+          <div class="field">
+            <label for="basemap">Basemap</label>
+            <select id="basemap">
+              <option value="street">OpenStreetMap street</option>
+              <option value="satellite">Satellite imagery</option>
+              <option value="topo">Topographic map</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>
+              <input id="showLabels" type="checkbox" checked>
+              Show settlement labels
+            </label>
+          </div>
+          <div class="field">
+            <label>
+              <input id="showReference" type="checkbox" checked>
+              Show orientation points if CSV has no coordinates
+            </label>
+          </div>
+          <div class="btn-row">
+            <button id="fitBtn">Fit records</button>
+            <button id="homeBtn">Gambia view</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">04 · Reading the results</div>
+          <p class="help">
+            Population totals sum the numeric population field for the filtered
+            source rows. Missing or non-numeric values are excluded from the sum.
+          </p>
+          <p class="help">
+            The district chart sums the rows assigned to each district. It should
+            not be interpreted as an official district total unless the source
+            records and aggregation method have been validated.
+          </p>
+          <p class="help">
+            If the CSV has coordinates, each valid row is mapped. Without
+            coordinates, the map may show reference locations only; those
+            locations are not linked to population records.
+          </p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">05 · Data quality checks</div>
+          <p class="help">
+            Check for missing settlement names, duplicate settlement codes,
+            absent administrative fields, invalid coordinates, and missing
+            population values before using results for official reporting.
+          </p>
+          <button id="qualityExportBtn">Export quality report</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- CENTRE: fixed map, table scrolls internally -->
+  <section class="column center">
+    <section class="panel map-panel">
+      <div class="panel-heading">
+        <span>Settlement distribution map</span>
+        <small id="mapStatus">Waiting for data</small>
+      </div>
+      <div id="map"></div>
+      <div class="legend">
+        <span><i class="legend-dot" style="background:#ff6474"></i>Higher relative population</span>
+        <span><i class="legend-dot" style="background:#12c5f4"></i>Other mapped records</span>
+        <span><i class="legend-dot" style="background:#f3d26a"></i>Reference locations only</span>
+      </div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-heading">
+        <span>Filtered settlement directory</span>
+        <small id="tableCount">0 records</small>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>LGA / Region</th>
+              <th>District</th>
+              <th>Ward</th>
+              <th>Settlement</th>
+              <th>Code</th>
+              <th>Population</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="6">Loading source data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <!-- RIGHT: scrollable analytics -->
+  <aside class="column right">
+    <section class="panel">
+      <div class="panel-heading">Key indicators <small>FILTERED ROWS</small></div>
+      <div class="panel-body">
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Records</div>
+            <div class="kpi-value" id="recordsKpi">0</div>
+            <div class="kpi-note">Current selection</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Population sum</div>
+            <div class="kpi-value" id="populationKpi">—</div>
+            <div class="kpi-note">Numeric values only</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Unique names</div>
+            <div class="kpi-value" id="uniqueKpi">0</div>
+            <div class="kpi-note">Case-insensitive names</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Mapped records</div>
+            <div class="kpi-value" id="mappedKpi">0</div>
+            <div class="kpi-note">Valid coordinates</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Mean population</div>
+            <div class="kpi-value" id="meanKpi">—</div>
+            <div class="kpi-note">Among numeric values</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Largest row</div>
+            <div class="kpi-value" id="largestKpi">—</div>
+            <div class="kpi-note">Maximum population value</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">Population by district <small>TOP 12</small></div>
+      <div class="panel-body">
+        <div class="chart-wrap tall"><canvas id="districtChart"></canvas></div>
+        <p class="help">
+          District values are aggregated from the filtered records. Missing
+          district names are grouped as “Not supplied”.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">Largest settlement records <small>TOP 10</small></div>
+      <div class="panel-body">
+        <div class="chart-wrap tall"><canvas id="settlementChart"></canvas></div>
+        <p class="help">
+          Rankings represent individual CSV rows, not a deduplicated settlement
+          database. Verify repeated names and codes before publishing rankings.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">Data quality summary</div>
+      <div class="panel-body">
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Missing population</div>
+            <div class="kpi-value" id="missingPopulationKpi">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Missing names</div>
+            <div class="kpi-value" id="missingNameKpi">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Duplicate codes</div>
+            <div class="kpi-value" id="duplicateCodeKpi">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Invalid coordinates</div>
+            <div class="kpi-value" id="invalidCoordinatesKpi">0</div>
+          </div>
+        </div>
+        <p class="help" id="qualityText">Waiting for source data.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">Methodology</div>
+      <div class="panel-body">
+        <p class="help">
+          Source data is loaded from the configured CSV URL. Administrative
+          filtering is performed in the browser. The original CSV rows are
+          preserved; no population estimates or settlement coordinates are
+          fabricated.
+        </p>
+        <p class="help">
+          Population sums and means are descriptive statistics for the currently
+          selected records. Their validity depends on the source population
+          definition, reference period, and completeness.
+        </p>
+        <p class="help">
+          Coordinate validity checks test latitude and longitude ranges.
+          They cannot confirm that a coordinate is positioned at the correct
+          settlement.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">Credits and attribution</div>
+      <div class="panel-body">
+        <p class="help">
+          <strong>Produced by Ansu Singhateh</strong><br>
+          GIS Analyst | GIS / Cartography Unit<br>
+          Gambia Bureau of Statistics (GBoS)
+        </p>
+        <p class="help">
+          GBoS GEOAI · Research and educational use.
+        </p>
+        <p class="help">
+          Interactive mapping: Leaflet.<br>
+          Charts: Chart.js.<br>
+          Street basemap: © OpenStreetMap contributors.<br>
+          Satellite tiles: Esri.
+        </p>
+        <p class="help">
+          Follow applicable GBoS data access, confidentiality and data-sharing
+          procedures before distributing source records or outputs.
+        </p>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CONFIGURATION
+   Replace the URL below with the actual public GitHub Raw URL.
+   Example:
+   https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/Directory%20of%20Settlement.csv
+   ========================================================= */
+
+const CSV_URL =
+  "https://raw.githubusercontent.com/silkysingz94-oss/Settlement-Population-Explorer/main/Directory%20of%20Settlement.csv";
+
+const $ = id => document.getElementById(id);
+
+const app = {
+  headers: [],
+  rows: [],
+  fields: {},
+  fileName: "",
+  chartDistrict: null,
+  chartSettlement: null,
+  markers: [],
+  sourceUrl: CSV_URL,
+  referenceLayer: L ? null : null
+};
+
+const aliases = {
+  lga: ["lga","region","admin1","administrative region","lgname"],
+  district: ["hdistrict","district","districtname","district_name","admin2"],
+  ward: ["hward","ward","wardname","ward_name"],
+  settlement: [
+    "settlement_name","settlement name","settlement",
+    "settlementname","name","hsettlementname"
+  ],
+  code: [
+    "hsettlement","settlement_code","settlement code",
+    "settlementid","settlement_id","code"
+  ],
+  population: [
+    "population","pop","total_population","total population",
+    "pop_total","sum_pop"
+  ],
+  latitude: ["latitude","lat","y"],
+  longitude: ["longitude","lon","long","lng","x"]
+};
+
+/* Map initialisation */
+const map = L.map("map", {
+  zoomControl:true,
+  preferCanvas:true
+}).setView([13.45,-15.5],8);
+
+const basemaps = {
+  street: L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {maxZoom:19, attribution:"&copy; OpenStreetMap contributors"}
+  ),
+  satellite: L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {maxZoom:19, attribution:"Tiles &copy; Esri"}
+  ),
+  topo: L.tileLayer(
+    "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    {maxZoom:17, attribution:"&copy; OpenTopoMap"}
+  )
+};
+
+let activeBasemap = basemaps.street.addTo(map);
+const recordLayer = L.layerGroup().addTo(map);
+const referenceLayer = L.layerGroup().addTo(map);
+
+const referencePoints = [
+  {name:"Banjul",lat:13.4549,lon:-16.5790},
+  {name:"Kanifing",lat:13.4460,lon:-16.6740},
+  {name:"Brikama",lat:13.2714,lon:-16.6494},
+  {name:"Mansakonko",lat:13.3773,lon:-15.6786},
+  {name:"Kerewan",lat:13.4890,lon:-16.0880},
+  {name:"Kuntaur",lat:13.6700,lon:-14.8900},
+  {name:"Janjanbureh",lat:13.5330,lon:-14.7670},
+  {name:"Basse",lat:13.3100,lon:-14.2200}
+];
+
+function normalize(s) {
+  return String(s ?? "")
+    .replace(/^\uFEFF/,"")
+    .trim().toLowerCase()
+    .replace(/[\s_\-./()]+/g,"")
+    .replace(/[^a-z0-9]/g,"");
+}
+
+function detectField(headers, candidates) {
+  for (const candidate of candidates) {
+    const found = headers.find(h => normalize(h) === normalize(candidate));
+    if (found) return found;
+  }
+  return null;
+}
+
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/,"");
+
+  const data = [];
+  let row = [];
+  let value = "";
+  let quoted = false;
+
+  for (let i=0; i<text.length; i++) {
+    const c = text[i];
+    const next = text[i+1];
+
+    if (c === '"' && quoted && next === '"') {
+      value += '"';
+      i++;
+    } else if (c === '"') {
+      quoted = !quoted;
+    } else if (c === "," && !quoted) {
+      row.push(value);
+      value = "";
+    } else if ((c === "\n" || c === "\r") && !quoted) {
+      if (c === "\r" && next === "\n") i++;
+      row.push(value);
+      if (row.some(x => x.trim() !== "")) data.push(row);
+      row = [];
+      value = "";
+    } else {
+      value += c;
+    }
+  }
+
+  if (value.length || row.length) {
+    row.push(value);
+    if (row.some(x => x.trim() !== "")) data.push(row);
+  }
+
+  if (data.length < 2) {
+    throw new Error("The CSV is empty or does not contain data rows.");
+  }
+
+  const headers = data.shift().map((h,i) =>
+    i === 0 ? h.replace(/^\uFEFF/,"").trim() : h.trim()
+  );
+
+  const rows = data.map(values => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (values[i] ?? "").trim());
+    return obj;
+  });
+
+  return {headers,rows};
+}
+
+function toNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
+  }
+
+  const n = Number(String(value).replace(/,/g,"").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function numberFormat(n) {
+  return Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
+}
+
+function safeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[ch]));
+}
+
+function raw(row,key) {
+  const col = app.fields[key];
+  return col ? (row[col] ?? "") : "";
+}
+
+function prepareData(parsed,fileName) {
+  app.headers = parsed.headers;
+  app.fields = {};
+
+  for (const [key,candidates] of Object.entries(aliases)) {
+    app.fields[key] = detectField(parsed.headers,candidates);
+  }
+
+  if (!app.fields.settlement) {
+    throw new Error(
+      "Could not detect the settlement name column. Available columns: " +
+      parsed.headers.join(", ")
+    );
+  }
+
+  if (!app.fields.population) {
+    throw new Error(
+      "Could not detect the population column. Available columns: " +
+      parsed.headers.join(", ")
+    );
+  }
+
+  app.rows = parsed.rows.map((row,index) => ({
+    ...row,
+    __index:index,
+    __lga:String(raw(row,"lga")).trim(),
+    __district:String(raw(row,"district")).trim(),
+    __ward:String(raw(row,"ward")).trim(),
+    __settlement:String(raw(row,"settlement")).trim(),
+    __code:String(raw(row,"code")).trim(),
+    __population:toNumber(raw(row,"population")),
+    __lat:toNumber(raw(row,"latitude")),
+    __lon:toNumber(raw(row,"longitude"))
+  }));
+
+  app.fileName = fileName;
+  $("sourceInfo").textContent =
+    "Loaded " + fileName + ". " +
+    app.headers.length + " columns detected.";
+  $("loadBadge").textContent = "CSV loaded";
+  $("loadBadge").style.borderColor = "#12d6a0";
+  $("fileStatus").textContent =
+    app.rows.length.toLocaleString() + " source records loaded.";
+}
+
+function fillSelect(id,values,placeholder) {
+  const select = $(id);
+  const previous = select.value;
+  select.replaceChildren();
+
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = placeholder;
+  select.appendChild(first);
+
+  [...new Set(values.filter(v => String(v).trim() !== ""))]
+    .sort((a,b) => a.localeCompare(b))
+    .forEach(value => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    });
+
+  if ([...select.options].some(o => o.value === previous)) {
+    select.value = previous;
+  }
+}
+
+function updateDistrictOptions() {
+  const lga = $("lga").value;
+  const rows = app.rows.filter(r => !lga || r.__lga === lga);
+  fillSelect("district",rows.map(r => r.__district),"All districts");
+  updateWardOptions();
+}
+
+function updateWardOptions() {
+  const lga = $("lga").value;
+  const district = $("district").value;
+
+  const rows = app.rows.filter(r =>
+    (!lga || r.__lga === lga) &&
+    (!district || r.__district === district)
+  );
+
+  fillSelect("ward",rows.map(r => r.__ward),"All wards");
+  updateSettlementOptions();
+}
+
+function updateSettlementOptions() {
+  const lga = $("lga").value;
+  const district = $("district").value;
+  const ward = $("ward").value;
+
+  const rows = app.rows.filter(r =>
+    (!lga || r.__lga === lga) &&
+    (!district || r.__district === district) &&
+    (!ward || r.__ward === ward)
+  );
+
+  fillSelect(
+    "settlement",
+    rows.map(r => r.__settlement),
+    "All settlements"
+  );
+}
+
+function initializeFilters() {
+  fillSelect("lga",app.rows.map(r => r.__lga),"All LGAs");
+  updateDistrictOptions();
+}
+
+function getFilteredRows() {
+  const lga = $("lga").value;
+  const district = $("district").value;
+  const ward = $("ward").value;
+  const settlement = $("settlement").value;
+  const query = $("search").value.trim().toLowerCase();
+
+  return app.rows.filter(r =>
+    (!lga || r.__lga === lga) &&
+    (!district || r.__district === district) &&
+    (!ward || r.__ward === ward) &&
+    (!settlement || r.__settlement === settlement) &&
+    (!query || [
+      r.__lga,r.__district,r.__ward,r.__settlement,r.__code
+    ].some(v => String(v).toLowerCase().includes(query)))
+  );
+}
+
+function validCoordinates(r) {
+  return r.__lat !== null &&
+    r.__lon !== null &&
+    Math.abs(r.__lat) <= 90 &&
+    Math.abs(r.__lon) <= 180;
+}
+
+function renderTable(rows) {
+  const body = $("tableBody");
+  body.replaceChildren();
+
+  rows.slice(0,3000).forEach(r => {
+    const tr = document.createElement("tr");
+
+    const values = [
+      r.__lga || "—",
+      r.__district || "—",
+      r.__ward || "—",
+      r.__settlement || "—",
+      r.__code || "—",
+      r.__population === null ? "—" : numberFormat(r.__population)
+    ];
+
+    values.forEach((value,index) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      if (index === 5) td.className = "numeric";
+      tr.appendChild(td);
+    });
+
+    body.appendChild(tr);
+  });
+
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 6;
+    td.textContent = "No records match the selected filters.";
+    tr.appendChild(td);
+    body.appendChild(tr);
+  }
+
+  $("tableCount").textContent =
+    rows.length.toLocaleString() + " rows" +
+    (rows.length > 3000 ? " · first 3,000 displayed" : "");
+}
+
+function chartOptions() {
+  return {
+    indexAxis:"y",
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label:context => "Population: " + numberFormat(context.raw || 0)
+        }
+      }
+    },
+    scales:{
+      x:{
+        beginAtZero:true,
+        ticks:{
+          color:"#b9cfe3",
+          callback:value => Number(value).toLocaleString()
+        },
+        grid:{color:"rgba(160,195,225,.12)"}
+      },
+      y:{
+        ticks:{color:"#c5d9eb",font:{size:10}},
+        grid:{display:false}
+      }
+    }
+  };
+}
+
+function renderCharts(rows) {
+  const totals = new Map();
+
+  rows.forEach(r => {
+    const name = r.__district || "(Not supplied)";
+    totals.set(name,(totals.get(name) || 0) + (r.__population ?? 0));
+  });
+
+  const districtData = [...totals.entries()]
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,12);
+
+  if (app.chartDistrict) app.chartDistrict.destroy();
+
+  app.chartDistrict = new Chart($("districtChart"),{
+    type:"bar",
+    data:{
+      labels:districtData.map(x => x[0]),
+      datasets:[{
+        label:"Population sum",
+        data:districtData.map(x => x[1]),
+        backgroundColor:"#12c5f4",
+        borderRadius:4
+      }]
+    },
+    options:chartOptions()
+  });
+
+  const topRows = rows
+    .filter(r => r.__population !== null)
+    .slice()
+    .sort((a,b) => b.__population-a.__population)
+    .slice(0,10);
+
+  if (app.chartSettlement) app.chartSettlement.destroy();
+
+  app.chartSettlement = new Chart($("settlementChart"),{
+    type:"bar",
+    data:{
+      labels:topRows.map(r =>
+        (r.__settlement || "(Unnamed)") +
+        (r.__ward ? " · " + r.__ward : "")
+      ),
+      datasets:[{
+        label:"Population",
+        data:topRows.map(r => r.__population),
+        backgroundColor:"#12d6a0",
+        borderRadius:4
+      }]
+    },
+    options:chartOptions()
+  });
+}
+
+function drawReferencePoints() {
+  referenceLayer.clearLayers();
+
+  if (!$("showReference").checked) return;
+
+  referencePoints.forEach(p => {
+    const marker = L.circleMarker([p.lat,p.lon],{
+      radius:5,
+      color:"#f3d26a",
+      fillColor:"#f3d26a",
+      fillOpacity:.85,
+      weight:1
+    });
+
+    marker.bindPopup(
+      "<b>" + safeText(p.name) + "</b><br>" +
+      "Orientation reference only.<br>" +
+      "Not matched to a CSV settlement record."
+    );
+
+    marker.addTo(referenceLayer);
+  });
+}
+
+function renderMap(rows) {
+  recordLayer.clearLayers();
+  referenceLayer.clearLayers();
+
+  const mapped = rows.filter(validCoordinates);
+  const maxPop = Math.max(1,...mapped.map(r => r.__population || 0));
+
+  mapped.forEach(r => {
+    const relative = (r.__population || 0) / maxPop;
+
+    const marker = L.circleMarker([r.__lat,r.__lon],{
+      radius:4 + 7 * Math.sqrt(relative),
+      color:relative > .65 ? "#ff6474" : "#12c5f4",
+      fillColor:relative > .65 ? "#ff6474" : "#12c5f4",
+      fillOpacity:.82,
+      weight:1.5
+    });
+
+    marker.bindPopup(
+      "<strong>" + safeText(r.__settlement || "Unnamed settlement") + "</strong>" +
+      "<br>Population: " +
+      (r.__population === null ? "Not supplied" : numberFormat(r.__population)) +
+      "<br>LGA: " + safeText(r.__lga || "—") +
+      "<br>District: " + safeText(r.__district || "—") +
+      "<br>Ward: " + safeText(r.__ward || "—") +
+      "<br>Code: " + safeText(r.__code || "—") +
+      "<br>Latitude: " + r.__lat +
+      "<br>Longitude: " + r.__lon
+    );
+
+    if ($("showLabels").checked && r.__settlement) {
+      marker.bindTooltip(safeText(r.__settlement),{
+        permanent:true,
+        direction:"top",
+        className:"settlement-label"
+      });
+    }
+
+    marker.addTo(recordLayer);
+  });
+
+  if (!mapped.length) drawReferencePoints();
+
+  $("mappedKpi").textContent = mapped.length.toLocaleString();
+  $("mapStatus").textContent = mapped.length
+    ? mapped.length.toLocaleString() + " mapped CSV records"
+    : "Reference points only";
+
+  if (mapped.length) {
+    map.fitBounds(
+      L.latLngBounds(mapped.map(r => [r.__lat,r.__lon])).pad(.12),
+      {maxZoom:13}
+    );
+  } else {
+    map.setView([13.45,-15.5],8);
+  }
+}
+
+function duplicateCodeCount(rows) {
+  const counts = new Map();
+
+  rows.forEach(r => {
+    if (r.__code) counts.set(r.__code,(counts.get(r.__code) || 0)+1);
+  });
+
+  let duplicates = 0;
+  counts.forEach(count => {
+    if (count > 1) duplicates += count-1;
+  });
+
+  return duplicates;
+}
+
+function render() {
+  const rows = getFilteredRows();
+  const populationRows = rows.filter(r => r.__population !== null);
+  const populationSum = populationRows.reduce((s,r) => s+r.__population,0);
+  const mean = populationRows.length ? populationSum/populationRows.length : null;
+  const largest = populationRows.length
+    ? populationRows.reduce((a,b) => a.__population > b.__population ? a : b)
+    : null;
+
+  $("recordsKpi").textContent = rows.length.toLocaleString();
+  $("populationKpi").textContent = populationRows.length
+    ? numberFormat(populationSum) : "—";
+
+  $("uniqueKpi").textContent = new Set(
+    rows.map(r => r.__settlement.trim().toLowerCase()).filter(Boolean)
+  ).size.toLocaleString();
+
+  $("meanKpi").textContent = mean === null ? "—" : numberFormat(mean);
+  $("largestKpi").textContent = largest
+    ? numberFormat(largest.__population) : "—";
+
+  $("missingPopulationKpi").textContent =
+    (rows.length-populationRows.length).toLocaleString();
+
+  $("missingNameKpi").textContent =
+    rows.filter(r => !r.__settlement).length.toLocaleString();
+
+  $("duplicateCodeKpi").textContent =
+    duplicateCodeCount(rows).toLocaleString();
+
+  $("invalidCoordinatesKpi").textContent =
+    rows.filter(r => {
+      const hasLat = app.fields.latitude && String(raw(r, "latitude")).trim() !== "";
+      const hasLon = app.fields.longitude && String(raw(r, "longitude")).trim() !== "";
+      return (hasLat || hasLon) && !validCoordinates(r);
+    }).length.toLocaleString();
+
+  $("qualityText").textContent =
+    rows.length.toLocaleString() + " selected rows. " +
+    (app.fields.latitude && app.fields.longitude
+      ? "Coordinate fields detected. Range checks do not verify settlement accuracy."
+      : "Latitude and/or longitude fields were not detected. CSV rows cannot be mapped directly.") +
+    " Duplicate-code counts are a review flag, not proof that every repeated code is an error.";
+
+  renderTable(rows);
+  renderCharts(rows);
+  renderMap(rows);
+
+  $("fileStatus").textContent =
+    app.rows.length.toLocaleString() + " source rows · " +
+    rows.length.toLocaleString() + " selected";
+}
+
+function exportCSV() {
+  const rows = getFilteredRows();
+
+  if (!rows.length) {
+    alert("There are no filtered rows to export.");
+    return;
+  }
+
+  const quote = value =>
+    '"' + String(value ?? "").replace(/"/g,'""') + '"';
+
+  const content = [
+    app.headers.map(quote).join(","),
+    ...rows.map(r => app.headers.map(h => quote(r[h] ?? "")).join(","))
+  ].join("\r\n");
+
+  downloadText(
+    "\uFEFF" + content,
+    "GBoS_GEOAI_Settlement_Directory_Filtered.csv",
+    "text/csv;charset=utf-8"
+  );
+}
+
+function exportQualityReport() {
+  const rows = getFilteredRows();
+
+  const report = rows.map(r => ({
+    source_row: r.__index + 2,
+    settlement: r.__settlement,
+    settlement_code: r.__code,
+    missing_settlement_name: !r.__settlement,
+    missing_population: r.__population === null,
+    duplicate_code_flag: !!r.__code &&
+      rows.filter(x => x.__code === r.__code).length > 1,
+    valid_coordinates: validCoordinates(r),
+    latitude: r.__lat ?? "",
+    longitude: r.__lon ?? ""
+  }));
+
+  const headers = Object.keys(report[0] || {
+    source_row:"",
+    settlement:"",
+    settlement_code:"",
+    missing_settlement_name:"",
+    missing_population:"",
+    duplicate_code_flag:"",
+    valid_coordinates:"",
+    latitude:"",
+    longitude:""
+  });
+
+  const quote = value =>
+    '"' + String(value ?? "").replace(/"/g,'""') + '"';
+
+  const csv = [
+    headers.map(quote).join(","),
+    ...report.map(r => headers.map(h => quote(r[h])).join(","))
+  ].join("\r\n");
+
+  downloadText(
+    "\uFEFF" + csv,
+    "SILKYSINGZ_GEOAI_Settlement_Data_Quality.csv",
+    "text/csv;charset=utf-8"
+  );
+}
+
+function downloadText(content,filename,type) {
+  const blob = new Blob([content],{type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url),1000);
+}
+
+async function loadCSVFromURL() {
+  const badge = $("loadBadge");
+  const status = $("fileStatus");
+
+  if (!CSV_URL || CSV_URL.includes("silkysingz94-oss") ||
+      CSV_URL.includes("Settlement-Population-Explorer")) {
+    badge.textContent = "CSV URL required";
+    status.textContent = "Set the actual GitHub Raw CSV URL in CSV_URL.";
+    $("sourceInfo").textContent =
+      "Automatic loading is configured, but the placeholder URL must be replaced with your real public CSV URL.";
+    $("tableBody").innerHTML =
+      '<tr><td colspan="6">Enter the actual CSV_URL in the code to load data automatically.</td></tr>';
+    return;
+  }
+
+  badge.textContent = "Loading CSV…";
+  badge.classList.add("status-loading");
+  status.textContent = "Fetching settlement directory…";
+
+  try {
+    const response = await fetch(CSV_URL,{
+      cache:"no-store",
+      headers:{"Accept":"text/csv,text/plain,*/*"}
+    });
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + ". Check the raw CSV URL and repository visibility.");
+    }
+
+    const csvText = await response.text();
+
+    if (!csvText.trim()) {
+      throw new Error("The downloaded CSV is empty.");
+    }
+
+    const parsed = parseCSV(csvText);
+    prepareData(parsed,"Directory of Settlement.csv");
+    initializeFilters();
+    render();
+
+    badge.textContent = "CSV connected";
+    status.textContent =
+      app.rows.length.toLocaleString() + " records loaded automatically";
+
+    requestAnimationFrame(() => map.invalidateSize());
+  } catch (error) {
+    console.error("Automatic CSV load failed:",error);
+    badge.textContent = "CSV load failed";
+    status.textContent = error.message;
+    $("sourceInfo").textContent =
+      "Could not automatically load the CSV. Confirm that CSV_URL points to the public raw CSV file and that internet access is available.";
+  }
+}
+
+/* Event wiring */
+$("reloadBtn").addEventListener("click",loadCSVFromURL);
+$("exportBtn").addEventListener("click",exportCSV);
+$("qualityExportBtn").addEventListener("click",exportQualityReport);
+
+$("manualFile").addEventListener("change",event => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = parseCSV(String(reader.result || ""));
+      prepareData(parsed,file.name);
+      initializeFilters();
+      render();
+      $("loadBadge").textContent = "Local CSV loaded";
+      requestAnimationFrame(() => map.invalidateSize());
+    } catch (error) {
+      alert("Unable to load local CSV: " + error.message);
+    }
+  };
+  reader.onerror = () => alert("Could not read the selected CSV file.");
+  reader.readAsText(file);
+});
+
+$("lga").addEventListener("change",() => {
+  updateDistrictOptions();
+  render();
+});
+$("district").addEventListener("change",() => {
+  updateWardOptions();
+  render();
+});
+$("ward").addEventListener("change",() => {
+  updateSettlementOptions();
+  render();
+});
+$("settlement").addEventListener("change",render);
+$("search").addEventListener("input",render);
+$("applyBtn").addEventListener("click",render);
+
+$("resetBtn").addEventListener("click",() => {
+  $("lga").value = "";
+  updateDistrictOptions();
+  $("district").value = "";
+  updateWardOptions();
+  $("ward").value = "";
+  updateSettlementOptions();
+  $("settlement").value = "";
+  $("search").value = "";
+  render();
+});
+
+$("basemap").addEventListener("change",() => {
+  map.removeLayer(activeBasemap);
+  activeBasemap = basemaps[$("basemap").value];
+  activeBasemap.addTo(map);
+  activeBasemap.bringToBack();
+});
+
+$("showLabels").addEventListener("change",render);
+$("showReference").addEventListener("change",() => {
+  if (!getFilteredRows().some(validCoordinates)) drawReferencePoints();
+  else renderMap(getFilteredRows());
+});
+
+$("fitBtn").addEventListener("click",() => {
+  const mapped = getFilteredRows().filter(validCoordinates);
+  if (mapped.length) {
+    map.fitBounds(
+      L.latLngBounds(mapped.map(r => [r.__lat,r.__lon])).pad(.12),
+      {maxZoom:13}
+    );
+  } else {
+    map.fitBounds([[13.0,-17.0],[13.9,-13.7]]);
+  }
+});
+
+$("homeBtn").addEventListener("click",() => map.setView([13.45,-15.5],8));
+
+window.addEventListener("resize",() => map.invalidateSize({pan:false}));
+
+/* Automatic loading starts when the page opens. */
+loadCSVFromURL();
+</script>
+</body>
+</html>
